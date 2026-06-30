@@ -1,0 +1,14 @@
+# Exclude dari Docker build context
+chrome_profile/
+output/
+__pycache__/
+*.pyc
+.env
+*.log
+.venv
+venv/
+node_modules/
+.git/
+assets/backgrounds/*.part
+assets/backgrounds/*.temp.mp4
+credentials/*.json
