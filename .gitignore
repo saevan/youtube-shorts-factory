@@ -1,12 +1,12 @@
-# Root .gitignore — semua pattern diproses dari sini
+# Root .gitignore
+chrome_profile_backup/
 youtube_shorts_factory/chrome_profile/
 youtube_shorts_factory/output/
 youtube_shorts_factory/.env
 youtube_shorts_factory/__pycache__/
 youtube_shorts_factory/*.pyc
 youtube_shorts_factory/*.log
-youtube_shorts_factory/credentials/client_secret.json
-youtube_shorts_factory/credentials/youtube_token.json
+youtube_shorts_factory/credentials/*.json
 youtube_shorts_factory/assets/backgrounds/*.part
 youtube_shorts_factory/assets/backgrounds/*.temp.mp4
 youtube_shorts_factory/assets/backgrounds/*.m4a

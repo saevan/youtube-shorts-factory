@@ -1,0 +1,21 @@
+# Exclude dari Docker build context
+chrome_profile/
+chrome_profile_backup/
+output/
+__pycache__/
+*.pyc
+.env
+*.log
+.venv
+venv/
+node_modules/
+.git/
+plans/
+*.md
+youtube_shorts_factory/assets/backgrounds/*.part
+youtube_shorts_factory/assets/backgrounds/*.temp.mp4
+youtube_shorts_factory/credentials/*.json
+youtube_shorts_factory/.env
+youtube_shorts_factory/output/
+youtube_shorts_factory/chrome_profile/
+youtube_shorts_factory/__pycache__/

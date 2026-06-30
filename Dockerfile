@@ -2,6 +2,7 @@
 # Dockerfile — YouTube Shorts Factory for Railway
 # 
 # Berisi: Python 3.11, Google Chrome, Chromedriver, xvfb
+# Semua source code ada di youtube_shorts_factory/
 # ============================================================
 FROM python:3.11-slim-bookworm
 
@@ -62,20 +63,20 @@ RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
 
 # ─── Install Python dependencies ────────────────────────────
 WORKDIR /app
-COPY requirements.txt .
+COPY youtube_shorts_factory/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# ─── Copy project files ─────────────────────────────────────
-COPY . .
+# ─── Copy project files (from youtube_shorts_factory/) ──────
+COPY youtube_shorts_factory/ .
+
+# ─── Copy startup script ────────────────────────────────────
+COPY startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
 
 # ─── Buat folder yang diperlukan ────────────────────────────
 RUN mkdir -p /app/output/audio /app/output/subtitles /app/output/videos \
     /app/assets/backgrounds /app/chrome_profile
-
-# ─── Startup script ─────────────────────────────────────────
-COPY startup.sh /app/startup.sh
-RUN chmod +x /app/startup.sh
 
 # ─── Healthcheck ────────────────────────────────────────────
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
