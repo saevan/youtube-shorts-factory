@@ -51,9 +51,8 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --d
     && rm -rf /var/lib/apt/lists/*
 
 # ─── Install Chromedriver (matching Chrome version) ────────
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') \
-    && CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d'.' -f1) \
-    && echo "Chrome version: $CHROME_VERSION (major: $CHROME_MAJOR)" \
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+') \
+    && echo "Chrome version: $CHROME_VERSION" \
     && wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" -O /tmp/chromedriver.zip \
     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
     && mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
