@@ -1,0 +1,34 @@
+# ─── Python ───────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+venv/
+.venv/
+*.egg
+
+# ─── Environment ──────────────────────────────────
+.env
+
+# ─── Output (video, audio, subtitles) ────────────
+output/
+
+# ─── Chrome Profile (local machine-specific) ─────
+chrome_profile/
+!chrome_profile/.gitkeep
+
+# ─── Credentials (API keys, secrets) ──────────────
+credentials/
+!credentials/.gitkeep
+
+# ─── Assets partial downloads ────────────────────
+assets/backgrounds/*.part
+assets/backgrounds/*.temp.mp4
+assets/backgrounds/*.m4a
+
+# ─── Logs ─────────────────────────────────────────
+*.log
+
+# ─── OS files ─────────────────────────────────────
+Thumbs.db
+.DS_Store

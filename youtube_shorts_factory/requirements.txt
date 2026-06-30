@@ -1,0 +1,34 @@
+# ============================================================
+# YouTube Shorts Content Factory - Requirements
+# ============================================================
+
+# LLM APIs
+google-generativeai>=0.5.0
+openai>=1.30.0          # DeepSeek uses OpenAI-compatible SDK
+
+# Text-to-Speech & Subtitle
+edge-tts>=6.1.9
+
+# Video Download & Processing
+yt-dlp>=2024.5.1
+moviepy>=1.0.3
+imageio>=2.34.0
+imageio-ffmpeg>=0.4.9
+
+# YouTube Upload (Selenium - bypass OAuth)
+selenium>=4.15.0
+webdriver-manager>=4.0.1
+
+# YouTube Data API (fallback, not actively used)
+google-api-python-client>=2.130.0
+google-auth>=2.29.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.0
+
+# Scheduling & Utilities
+schedule>=1.2.1
+python-dotenv>=1.0.1
+httpx>=0.27.0
+Pillow>=10.3.0
+numpy>=1.26.4
+requests>=2.31.0
