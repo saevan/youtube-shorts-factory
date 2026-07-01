@@ -65,7 +65,7 @@ print(f'✅ {len(cookies)} cookies disimpan ke /app/chrome_profile/cookies.json'
 fi
 
 # ─── 4. Setup Chrome Profile jika belum ada ─────────────────
-if [ ! -f /app/chrome_profile/First Run ]; then
+if [ ! -f "/app/chrome_profile/First Run" ]; then
     echo "⚠️  chrome_profile belum ada. Membuat baru..."
     mkdir -p /app/chrome_profile
 fi
