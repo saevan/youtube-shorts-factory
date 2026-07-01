@@ -2,6 +2,7 @@
 Selenium-based YouTube Studio Uploader
 Bypass OAuth consent screen issues entirely.
 User login manual sekali di browser, session tersimpan.
+Cookie injection via YOUTUBE_COOKIES_B64 environment variable for Railway.
 """
 import sys
 import os
@@ -28,6 +29,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).parent
 CHROME_PROFILE = BASE_DIR / "chrome_profile"
+COOKIES_FILE = CHROME_PROFILE / "cookies.json"  # Injected by startup.sh from YOUTUBE_COOKIES_B64
 VIDEOS_DIR = BASE_DIR / "output" / "videos"
 
 def cari_video_terbaru() -> Path | None:
@@ -117,6 +119,90 @@ def setup_driver() -> webdriver.Chrome:
     driver = webdriver.Chrome(service=service, options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
+
+
+def _inject_cookies_from_file(driver: webdriver.Chrome) -> bool:
+    """
+    Load cookies dari COOKIES_FILE (diiject oleh startup.sh dari YOUTUBE_COOKIES_B64)
+    dan inject ke browser Selenium sebelum navigasi ke YouTube.
+    """
+    if not COOKIES_FILE.exists():
+        print("📭 File cookies tidak ditemukan, lanjut tanpa cookie injection.")
+        return False
+
+    try:
+        with open(COOKIES_FILE, 'r') as f:
+            cookies = json.load(f)
+
+        if not cookies:
+            print("📭 File cookies kosong.")
+            return False
+
+        print(f"🍪 Ditemukan {len(cookies)} cookies di {COOKIES_FILE.name}")
+
+        # Filter hanya cookie youtube.com & google.com
+        youtube_cookies = [
+            c for c in cookies
+            if "youtube.com" in c.get("domain", "") or "google.com" in c.get("domain", "")
+        ]
+        if not youtube_cookies:
+            youtube_cookies = cookies  # fallback: inject semua
+
+        print(f"   {len(youtube_cookies)} cookie untuk YouTube/Google akan di-inject")
+
+        # Buka YouTube dulu (domain required untuk add_cookie)
+        print("   Membuka youtube.com...")
+        driver.get("https://www.youtube.com")
+        time.sleep(2)
+
+        # Inject cookies
+        success_count = 0
+        for cookie in youtube_cookies:
+            try:
+                sel_cookie = {
+                    "name": cookie.get("name", ""),
+                    "value": cookie.get("value", ""),
+                    "domain": cookie.get("domain", ".youtube.com"),
+                    "path": cookie.get("path", "/"),
+                    "secure": cookie.get("secure", True),
+                }
+                if cookie.get("expiry"):
+                    sel_cookie["expiry"] = int(cookie["expiry"])
+                if cookie.get("httpOnly"):
+                    sel_cookie["httpOnly"] = True
+
+                driver.add_cookie(sel_cookie)
+                success_count += 1
+            except Exception:
+                pass  # Abaikan cookie yang gagal
+
+        print(f"   ✅ {success_count}/{len(youtube_cookies)} cookie berhasil diinject")
+
+        # Verifikasi: refresh YouTube
+        print("   Verifikasi login...")
+        driver.get("https://www.youtube.com")
+        time.sleep(3)
+
+        page_source = driver.page_source.lower()
+        if "avatar" in page_source or "channel" in page_source:
+            print("   ✅ Session YouTube aktif! (avatar/channel ditemukan)")
+            return True
+        else:
+            # Coba cek studio
+            driver.get("https://studio.youtube.com")
+            time.sleep(3)
+            current_url = driver.current_url.lower()
+            if "studio.youtube.com" in current_url and "signin" not in current_url:
+                print("   ✅ Dashboard YouTube Studio terbuka! Login via cookie berhasil.")
+                return True
+            else:
+                print("   ⚠️ Cookie mungkin expired, akan fallback ke manual login.")
+                return False
+
+    except Exception as e:
+        print(f"   ⚠️ Error inject cookies: {e}")
+        return False
+
 
 def tunggu_login(driver: webdriver.Chrome) -> bool:
     print()
@@ -625,30 +711,50 @@ def upload_video_pipeline(video_path: Path, script: str) -> str:
     try:
         driver = setup_driver()
         
-        # Cek login (session tersimpan di chrome_profile)
-        driver.get("https://studio.youtube.com")
-        time.sleep(5)
+        # ─── Cookie Injection ────────────────────────────────────────────
+        # Coba inject cookies dari file (YOUTUBE_COOKIES_B64 via startup.sh)
+        cookies_injected = _inject_cookies_from_file(driver)
         
-        if "accounts.google.com" in driver.current_url or "signin" in driver.current_url:
-            # Belum login — butuh user intervensi
-            print("⚠️  Belum login! Chrome akan terbuka.")
-            print("   Silakan login dengan akun YouTube kamu.")
-            print("   Script akan menunggu 10 menit...")
+        if cookies_injected:
+            # Langsung ke YouTube Studio — seharusnya sudah login
+            print("   🚀 Navigasi ke YouTube Studio...")
+            driver.get("https://studio.youtube.com")
+            time.sleep(5)
             
-            start = time.time()
-            timeout = 600
-            while time.time() - start < timeout:
-                url = driver.current_url.lower()
-                if "studio.youtube.com" in url and "accounts.google.com" not in url:
-                    print("✅ Login berhasil!")
-                    break
-                remaining = int(timeout - (time.time() - start))
-                if remaining % 60 == 0:
-                    print(f"⏳ Menunggu login... ({remaining//60} menit)")
-                time.sleep(2)
+            # Verifikasi: cek apakah benar-benar sampai dashboard
+            current_url = driver.current_url.lower()
+            if "accounts.google.com" not in current_url and "signin" not in current_url:
+                print("✅ Login via cookie berhasil! Dashboard YouTube Studio terbuka.")
             else:
-                driver.quit()
-                raise TimeoutError("Timeout menunggu login")
+                print("⚠️  Cookie gagal, fallback ke manual login...")
+                cookies_injected = False  # fallback
+        
+        if not cookies_injected:
+            # Cek login (session tersimpan di chrome_profile)
+            print("📋 Memeriksa session tersimpan di chrome_profile...")
+            driver.get("https://studio.youtube.com")
+            time.sleep(5)
+            
+            if "accounts.google.com" in driver.current_url or "signin" in driver.current_url:
+                # Belum login — butuh user intervensi
+                print("⚠️  Belum login! Chrome akan terbuka.")
+                print("   Silakan login dengan akun YouTube kamu.")
+                print("   Script akan menunggu 10 menit...")
+                
+                start = time.time()
+                timeout = 600
+                while time.time() - start < timeout:
+                    url = driver.current_url.lower()
+                    if "studio.youtube.com" in url and "accounts.google.com" not in url:
+                        print("✅ Login berhasil!")
+                        break
+                    remaining = int(timeout - (time.time() - start))
+                    if remaining % 60 == 0:
+                        print(f"⏳ Menunggu login... ({remaining//60} menit)")
+                    time.sleep(2)
+                else:
+                    driver.quit()
+                    raise TimeoutError("Timeout menunggu login")
         
         # Upload
         success = upload_video(driver, video_path, title)

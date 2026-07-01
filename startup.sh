@@ -52,13 +52,25 @@ server.serve_forever()
 HEALTH_PID=$!
 echo "✅ Healthcheck server running (PID: $HEALTH_PID)"
 
-# ─── 3. Setup Chrome Profile jika belum ada ─────────────────
+# ─── 3. Inject Cookies dari Environment Variable ────────────
+if [ -n "$YOUTUBE_COOKIES_B64" ]; then
+    echo "🍪 YOUTUBE_COOKIES_B64 ditemukan! Meng-inject cookies..."
+    echo "$YOUTUBE_COOKIES_B64" | python -c "
+import sys, json, base64
+cookies = json.loads(base64.b64decode(sys.stdin.read().strip()))
+with open('/app/chrome_profile/cookies.json', 'w') as f:
+    json.dump(cookies, f)
+print(f'✅ {len(cookies)} cookies disimpan ke /app/chrome_profile/cookies.json')
+" && echo "✅ Cookies berhasil di-inject!" || echo "⚠️  Gagal inject cookies"
+fi
+
+# ─── 4. Setup Chrome Profile jika belum ada ─────────────────
 if [ ! -f /app/chrome_profile/First Run ]; then
     echo "⚠️  chrome_profile belum ada. Membuat baru..."
     mkdir -p /app/chrome_profile
 fi
 
-# ─── 4. Start Scheduler ─────────────────────────────────────
+# ─── 5. Start Scheduler ─────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════════"
 echo "  ⏰ Starting Scheduler..."

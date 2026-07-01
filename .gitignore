@@ -10,3 +10,7 @@ youtube_shorts_factory/credentials/*.json
 youtube_shorts_factory/assets/backgrounds/*.part
 youtube_shorts_factory/assets/backgrounds/*.temp.mp4
 youtube_shorts_factory/assets/backgrounds/*.m4a
+youtube_cookies.json
+export_cookies.py
+deploy_now.js
+query_railway.js
