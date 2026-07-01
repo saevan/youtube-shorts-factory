@@ -764,6 +764,53 @@ def upload_video_pipeline(video_path: Path, script: str) -> str:
         if not success:
             raise RuntimeError("Upload video via Selenium gagal")
         
+        # ─── Cleanup: Hapus file setelah upload sukses ──────────────────────
+        print("\n🧹 Membersihkan file sisa...")
+        files_deleted = 0
+        
+        # 1. Hapus video
+        try:
+            if video_path.exists():
+                size_mb = video_path.stat().st_size / (1024 * 1024)
+                video_path.unlink()
+                print(f"   ✅ Video dihapus: {video_path.name} ({size_mb:.1f} MB)")
+                files_deleted += 1
+        except Exception as e:
+            print(f"   ⚠️  Gagal hapus video: {e}")
+        
+        # 2. Hapus audio & subtitle (berdasarkan session_id dari nama video)
+        session_prefix = video_path.stem.replace("video_", "audio_")  # video_xxx → audio_xxx
+        session_prefix2 = video_path.stem.replace("video_", "")       # ambil session_id
+        
+        # Cari audio dengan session_id yang sama
+        audio_dir = video_path.parent.parent / "audio"
+        if audio_dir.exists():
+            for f in audio_dir.glob(f"*{session_prefix2}*"):
+                try:
+                    size_mb = f.stat().st_size / (1024 * 1024)
+                    f.unlink()
+                    print(f"   ✅ Audio dihapus: {f.name} ({size_mb:.1f} MB)")
+                    files_deleted += 1
+                except:
+                    pass
+        
+        # Cari subtitle dengan session_id yang sama
+        sub_dir = video_path.parent.parent / "subtitles"
+        if sub_dir.exists():
+            for f in sub_dir.glob(f"*{session_prefix2}*"):
+                try:
+                    f.unlink()
+                    print(f"   ✅ Subtitle dihapus: {f.name}")
+                    files_deleted += 1
+                except:
+                    pass
+        
+        if files_deleted > 0:
+            print(f"   🗑️  Total {files_deleted} file dibersihkan.")
+        else:
+            print("   ℹ️  Tidak ada file sisa yang perlu dibersihkan.")
+        print()
+        
         # Return URL — user cek di studio.youtube.com
         return f"https://studio.youtube.com (upload: {video_path.name})"
         
